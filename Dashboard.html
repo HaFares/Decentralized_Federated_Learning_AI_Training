@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>FL Enterprise Dashboard</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-light: #eff6ff;
+            --text-dark: #1e293b;
+            --text-muted: #64748b;
+            --bg-body: #f1f5f9;
+            --bg-sidebar: #ffffff;
+            --border-color: #e2e8f0;
+            --success: #10b981;
+            --danger: #ef4444;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-body);
+            margin: 0;
+            padding: 0;
+            color: var(--text-dark);
+            height: 100vh;
+            overflow: hidden;
+            /* App-like feel */
+        }
+
+        .app-container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: 240px;
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border-color);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            overflow-y: auto;
+        }
+
+        .logo {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 32px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .config-section {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-family: inherit;
+            color: var(--text-dark);
+            transition: border-color 0.2s;
+            box-sizing: border-box;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-light);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+        }
+
+        .btn-primary:hover {
+            background: #1d4ed8;
+        }
+
+        .btn-danger {
+            background: white;
+            color: var(--danger);
+            border: 1px solid #fee2e2;
+            margin-top: 12px;
+        }
+
+        .btn-danger:hover {
+            background: #fef2f2;
+        }
+
+        .status-card {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: auto;
+            /* Push to bottom of config if we wanted, but let's keep inline */
+        }
+
+        /* Custom Progress Bar */
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            margin-top: 24px;
+        }
+
+        .progress-track {
+            background: #e2e8f0;
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            background: var(--primary);
+            height: 100%;
+            width: 0%;
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* MAIN CONTENT */
+        .main-content {
+            flex: 1;
+            padding: 32px;
+            overflow-y: auto;
+            background: #f8fafc;
+        }
+
+        /* KPI HEADER */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .kpi-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .kpi-title {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .kpi-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--text-muted);
+        }
+
+        .status-dot.active {
+            background: var(--success);
+            box-shadow: 0 0 0 3px #dcfce7;
+        }
+
+        .status-dot.inactive {
+            background: var(--danger);
+        }
+
+        /* TABS */
+        .tabs-nav {
+            display: flex;
+            gap: 24px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 24px;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 12px 0;
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            cursor: pointer;
+            position: relative;
+        }
+
+        .tab-btn.active {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: var(--primary);
+        }
+
+        /* CHARTS GRID */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+        }
+
+        .chart-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .chart-title {
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        /* TABLE */
+        .table-container {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th {
+            background: #f8fafc;
+            padding: 12px 24px;
+            text-align: left;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            font-weight: 600;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .data-table td {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.875rem;
+        }
+
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-global {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        /* Blue-100 to Blue-800 */
+        .badge-part {
+            background: #f1f5f9;
+            color: #475569;
+            font-family: monospace;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="app-container">
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="logo">
+                <span>🛰️</span> FL Orchestrator
+            </div>
+
+            <div class="config-section">
+                <div class="form-group">
+                    <label>Target Rounds</label>
+                    <input type="number" id="nbRounds" value="50" class="form-control">
+                </div>
+
+                <div class="form-group">
+                    <label>Expected Participants</label>
+                    <input type="number" id="nbParts" value="2" class="form-control">
+                </div>
+
+                <div>
+                    <button class="btn btn-primary" onclick="startAuto()">Start Session</button>
+                    <button class="btn btn-danger" onclick="stop()">Emergency Stop</button>
+                </div>
+
+                <hr style="border:0; border-top:1px solid #eee; width:100%; margin: 24px 0;">
+
+                <div class="status-card">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                        <span style="font-weight:600; font-size:0.9rem;">Status</span>
+                        <span id="statText" style="font-weight:bold; color:var(--text-muted);">IDLE</span>
+                    </div>
+
+                    <div class="progress-label">
+                        <span>Round Progress (<span id="roundDisp">0</span>/<span id="totalRDisp">0</span>)</span>
+                        <span id="progPct">0%</span>
+                    </div>
+                    <div class="progress-track">
+                        <div class="progress-fill" id="progFill"></div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- CONTENT -->
+        <main class="main-content">
+
+            <!-- KPIs -->
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-title">System Status</div>
+                    <div class="kpi-value">
+                        <div id="sysDot" class="status-dot inactive"></div>
+                        <span id="sysText">Disconnected</span>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">Current Round</div>
+                    <div class="kpi-value" id="kpiRound">0 / 0</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">Global Average Accuracy</div>
+                    <div class="kpi-value" id="kpiAcc">0.00%</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">Active Participants</div>
+                    <div class="kpi-value" id="kpiParts">0</div>
+                </div>
+            </div>
+
+            <!-- TABS -->
+            <nav class="tabs-nav">
+                <button class="tab-btn active" onclick="switchTab('overview')">Overview</button>
+                <button class="tab-btn" onclick="switchTab('details')">Detailed Stats</button>
+            </nav>
+
+            <!-- VIEW OVERVIEW -->
+            <div id="view-overview" class="view-section charts-grid">
+                <div class="chart-card">
+                    <div class="chart-header"><span class="chart-title">Accuracy Scale</span></div>
+                    <div style="height: 300px;"><canvas id="chartAcc"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-header"><span class="chart-title">Loss Convergence</span></div>
+                    <div style="height: 300px;"><canvas id="chartLoss"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-header"><span class="chart-title">F1 Score</span></div>
+                    <div style="height: 300px;"><canvas id="chartF1"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-header"><span class="chart-title">Precision</span></div>
+                    <div style="height: 300px;"><canvas id="chartPrec"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-header"><span class="chart-title">Recall</span></div>
+                    <div style="height: 300px;"><canvas id="chartRec"></canvas></div>
+                </div>
+            </div>
+
+            <!-- VIEW DETAILS -->
+            <div id="view-details" class="view-section" style="display:none;">
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Round</th>
+                                <th>Participant</th>
+                                <th>Accuracy</th>
+                                <th>Loss</th>
+                                <th>F1 Score</th>
+                                <th>Precision</th>
+                                <th>Recall</th>
+                            </tr>
+                        </thead>
+                        <tbody id="metricsBody">
+                            <!-- JS Loads -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        const API = "http://localhost:8000";
+        const charts = {};
+
+        function switchTab(viewId) {
+            $(".view-section").hide();
+            $(`#view-${viewId}`).fadeIn(200);
+            $(".tab-btn").removeClass("active");
+
+            // Find button based on onclick attribute
+            $(`button[onclick="switchTab('${viewId}')"]`).addClass("active");
+        }
+
+        // Chart Design
+        function createConfig(label) {
+            return {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'Global Model',
+                            data: [],
+                            borderColor: '#2563eb', // Always Blue for Global
+                            backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.4, // Smooth
+                            fill: true,
+                            pointRadius: 0,
+                            pointHoverRadius: 6
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: '#1e293b',
+                            titleColor: '#f8fafc',
+                            bodyColor: '#f8fafc',
+                            borderColor: '#334155',
+                            borderWidth: 1
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            grid: {
+                                borderDash: [5, 5],
+                                color: '#e2e8f0',
+                                drawBorder: false
+                            },
+                            ticks: { color: '#64748b', font: { size: 11 } }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { display: false }
+                        }
+                    },
+                    interaction: {
+                        mode: 'nearest',
+                        axis: 'x',
+                        intersect: false
+                    }
+                }
+            };
+        }
+
+        async function initCharts() {
+            charts.acc = new Chart(document.getElementById('chartAcc').getContext('2d'), createConfig('Accuracy'));
+            charts.loss = new Chart(document.getElementById('chartLoss').getContext('2d'), createConfig('Loss'));
+            charts.f1 = new Chart(document.getElementById('chartF1').getContext('2d'), createConfig('F1'));
+            charts.prec = new Chart(document.getElementById('chartPrec').getContext('2d'), createConfig('Precision'));
+            charts.rec = new Chart(document.getElementById('chartRec').getContext('2d'), createConfig('Recall'));
+        }
+
+        async function startAuto() {
+            const r = $("#nbRounds").val();
+            const p = $("#nbParts").val();
+            try {
+                await fetch(`${API}/control/start_auto?rounds=${r}&participants=${p}`, { method: 'POST' });
+                alert("Session Started!");
+            } catch (e) { alert("Error starting: " + e); }
+        }
+
+        async function stop() {
+            if (confirm("Stop Training?")) {
+                await fetch(`${API}/control/stop`, { method: 'POST' });
+            }
+        }
+
+        function renderTable(data) {
+            const tbody = $("#metricsBody");
+            tbody.empty();
+
+            const sorted = data.sort((a, b) => {
+                if (b.round !== a.round) return b.round - a.round; // Desc round
+                if (a.participant === "GLOBAL_MODEL") return -1;
+                return 1;
+            });
+
+            sorted.forEach(m => {
+                const isGlobal = m.participant === "GLOBAL_MODEL";
+                const badgeClass = isGlobal ? "badge badge-global" : "badge badge-part";
+                const name = isGlobal ? "GLOBAL MODEL" : m.participant.substring(0, 12); // Truncate hash
+
+                const safe = (v) => v !== null && v !== undefined ? v.toFixed(4) : "-";
+
+                const row = `
+                <tr>
+                    <td><span style="font-weight:600; color:#64748b;">R${m.round}</span></td>
+                    <td><span class="${badgeClass}">${name}</span></td>
+                    <td style="font-weight:500; color:${m.accuracy > 0.8 ? '#10b981' : 'inherit'}">${safe(m.accuracy)}</td>
+                    <td>${safe(m.loss)}</td>
+                    <td>${safe(m.f1)}</td>
+                    <td>${safe(m.precision)}</td>
+                    <td>${safe(m.recall)}</td>
+                </tr>
+            `;
+                tbody.append(row);
+            });
+        }
+
+        async function update() {
+            try {
+                // 1. Status
+                const res = await fetch(`${API}/status`);
+                const s = await res.json();
+
+                const dot = $("#sysDot");
+                const txt = $("#sysText");
+                const statTxt = $("#statText");
+
+                if (s.training_active) {
+                    dot.removeClass("inactive").addClass("active");
+                    txt.text("Active Training");
+                    statTxt.text("RUNNING").css("color", "#10b981");
+                } else {
+                    dot.removeClass("active").addClass("inactive");
+                    txt.text("System Idle");
+                    statTxt.text("STOPPED").css("color", "#ef4444");
+                }
+
+                $("#roundDisp").text(s.current_round);
+                $("#totalRDisp").text(s.target_rounds);
+                $("#kpiRound").text(`${s.current_round} / ${s.target_rounds}`);
+
+                // Progress Bar
+                const prog = s.target_rounds > 0 ? (s.current_round / s.target_rounds) * 100 : 0;
+                $("#progFill").css("width", `${prog}%`);
+                $("#progPct").text(`${Math.round(prog)}%`);
+
+                // Active Participants KPI: received / expected
+                $("#kpiParts").text(`${s.received_this_round} / ${s.expected_participants}`);
+
+
+                // 2. Metrics
+                const mRes = await fetch(`${API}/metrics`);
+                const mData = await mRes.json();
+
+                renderTable(mData);
+
+                // KPI: Global Acc (Latest)
+                const globalMetrics = mData.filter(m => m.participant === "GLOBAL_MODEL");
+                if (globalMetrics.length > 0) {
+                    const latestRound = Math.max(...globalMetrics.map(m => m.round));
+                    const latest = globalMetrics.find(m => m.round === latestRound);
+                    if (latest) {
+                        $("#kpiAcc").text((latest.accuracy * 100).toFixed(2) + "%");
+                    }
+                } else {
+                    $("#kpiAcc").text("N/A");
+                }
+
+                // Charts
+                const partMetrics = mData.filter(m => m.participant !== "GLOBAL_MODEL");
+                const roundSet = new Set(mData.map(m => m.round));
+                const rounds = Array.from(roundSet).sort((a, b) => a - b).map(r => `R${r}`);
+
+                const extract = (key) => {
+                    const gPoints = [];
+                    rounds.forEach(rLabel => {
+                        const rNum = parseInt(rLabel.substring(1));
+                        const g = globalMetrics.find(m => m.round === rNum);
+                        gPoints.push(g ? g[key] : null);
+                    });
+                    return gPoints;
+                };
+
+                const refreshChart = (chart, key) => {
+                    const gData = extract(key);
+                    chart.data.labels = rounds;
+                    chart.data.datasets[0].data = gData;
+                    chart.update('none');
+                };
+
+                refreshChart(charts.acc, 'accuracy');
+                refreshChart(charts.loss, 'loss');
+                refreshChart(charts.f1, 'f1');
+                refreshChart(charts.prec, 'precision');
+                refreshChart(charts.rec, 'recall');
+
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        $(document).ready(() => {
+            initCharts();
+            setInterval(update, 2000);
+            update(); // initial
+        });
+    </script>
+
+</body>
+
+</html>
