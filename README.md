@@ -133,7 +133,7 @@ python coordinator_bot.py
 ```
 
 ### 3. Launch Participants
-Open separate terminals for each client. They will automatically wait for the round to start.
+Each Participant should Open terminal. They will automatically wait for the round to start.
 ```bash
 # In a real environment, each participant runs this on their own machine with their own data.
 python Train_Participant.py 
@@ -168,5 +168,3 @@ You can start the session via an API call or the dashboard (if configured), or l
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
-
-*Verified by [Your Name/Organization]*
